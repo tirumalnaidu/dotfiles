@@ -1,0 +1,6 @@
+# machine-local, never commit
+.venv/
+venv/
+*.local
+.zsh_history
+.history
