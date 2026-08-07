@@ -37,3 +37,5 @@ ln -sfn ~/dotfiles/tmux.conf        ~/.tmux.conf
   on machines without a venv.
 - Plugins/other binaries you add on a per-machine basis live on that machine;
   this repo holds the shared, portable baseline.
+
+# git author updated to primary GitHub email
