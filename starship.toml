@@ -1,35 +1,51 @@
-# Starship prompt — minimal, clean, fast
-# Docs: https://starship.rs/config
+"$schema" = 'https://starship.rs/config-schema.json'
 
-# Keep it tight — just the essentials
+# Bracketed Segments preset, trimmed to the modules actually shown.
 add_newline = true
-
-[character]
-success_symbol = "[❯](bold green)"
-error_symbol = "[❯](bold red)"
+format = "$directory$git_branch$git_state$env_var$line_break$character"
+right_format = "$status$cmd_duration"
 
 [directory]
-truncation_length = 3
-truncate_to_repo = true
+style = "blue"
+truncation_length = 4
+truncation_symbol = ".../"
+truncate_to_repo = false
+read_only = " ro"
 
+# Symbols left empty on purpose: starship's defaults are Nerd Font glyphs and
+# this terminal has no Nerd Font, so they would render as tofu boxes.
 [git_branch]
-symbol = " "
+symbol = ""
+style = "yellow"
+format = '\[[$symbol$branch]($style)\]'
 
+# Deliberately off: scanning status in a tree this size is the one thing that
+# makes a prompt slow, and the markers were dropped from the prompt anyway.
 [git_status]
-style = "bold yellow"
+disabled = true
 
-[python]
-symbol = " "
+[git_state]
+style = "red"
+format = '\[[$state( $progress_current/$progress_total)]($style)\]'
 
-[nodejs]
-symbol = " "
+# Venv label. Fed by PROMPT_VENV from ~/.zshrc rather than starship's `python`
+# module: that module only appears next to Python files, and it would print the
+# useless `.venv` basename instead of the tree the venv belongs to.
+[env_var.PROMPT_VENV]
+variable = "PROMPT_VENV"
+style = "242"
+format = '\[[$env_value]($style)\]'
+
+[character]
+success_symbol = "[>](green)"
+error_symbol = "[>](red)"
+
+[status]
+disabled = false
+style = "red"
+format = '\[[$status]($style)\]'
 
 [cmd_duration]
-min_time = 2000
-show_milliseconds = false
-
-[username]
-show_always = false
-
-[hostname]
-ssh_only = true
+min_time = 3000
+style = "242"
+format = '\[[$duration]($style)\]'
