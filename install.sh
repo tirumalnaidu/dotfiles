@@ -43,6 +43,38 @@ ln -sfn "$CONF_DIR/tmux.conf"          "$HOME/.tmux.conf"
 # tmux shells out to this at runtime for the C-a ? popup, so it needs a real path.
 ln -sfn "$CONF_DIR/tmux-cheatsheet.md" "$HOME/.tmux-cheatsheet.md"
 
+echo "==> Linking Claude Code config…"
+mkdir -p "$HOME/.claude/bin"
+ln -sfn "$CONF_DIR/.claude/CLAUDE.md"               "$HOME/.claude/CLAUDE.md"
+ln -sfn "$CONF_DIR/.claude/statusline-command.sh"   "$HOME/.claude/statusline-command.sh"
+ln -sfn "$CONF_DIR/.claude/bin/claude-turn-diff.sh" "$HOME/.claude/bin/claude-turn-diff.sh"
+ln -sfn "$CONF_DIR/.claude/bin/cc-sessions"         "$HOME/.claude/bin/cc-sessions"
+# settings.json is copied, never linked: Claude Code rewrites this file itself
+# when you change model, plugins or /config. An atomic write would replace the
+# symlink with a regular file and the sync would stop with no error at all.
+if [ -e "$HOME/.claude/settings.json" ]; then
+  echo "    settings.json already exists, left alone"
+  echo "    (compare: diff $CONF_DIR/.claude/settings.json ~/.claude/settings.json)"
+else
+  cp "$CONF_DIR/.claude/settings.json" "$HOME/.claude/settings.json"
+fi
+
+echo "==> VSCode…"
+if [ -d "$HOME/.vscode-server/data/Machine" ]; then
+  ln -sfn "$CONF_DIR/.vscode/settings.json" "$HOME/.vscode-server/data/Machine/settings.json"
+  echo "    machine settings linked"
+fi
+# The extensions themselves are ~1.4G on disk; replay the list instead.
+if command -v code >/dev/null 2>&1; then
+  while IFS= read -r ext; do
+    [ -n "$ext" ] && code --install-extension "$ext" --force >/dev/null || true
+  done < "$CONF_DIR/.vscode/extensions.txt"
+  echo "    $(wc -l < "$CONF_DIR/.vscode/extensions.txt") extensions requested"
+else
+  echo "    'code' not on PATH; install later with:"
+  echo "      xargs -n1 code --install-extension < $CONF_DIR/.vscode/extensions.txt"
+fi
+
 echo "==> Making zsh the default shell…"
 if [ "$SHELL" != "$(command -v zsh)" ]; then
   sudo chsh -s "$(command -v zsh)" "$USER" || echo "    (run: chsh -s \$(which zsh) to finish)"

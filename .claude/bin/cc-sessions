@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+"""List Claude Code sessions across *every* project slug, newest first.
+
+The /resume picker only shows the current directory's slug, but `claude
+--resume <id>` resolves an id from any slug -- so a global index plus the
+session's recorded cwd is all that's needed to reach any past session.
+
+Usage:
+    cc-sessions [-n N] [search terms ...]
+"""
+
+import json
+import os
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+PROJECTS = Path(os.environ.get("CLAUDE_CONFIG_DIR", Path.home() / ".claude")) / "projects"
+
+
+def summarize(path):
+    """Pull (cwd, branch, label) out of a transcript cheaply.
+
+    Label prefers the `ai-title` record -- the same generated title the
+    /resume picker shows -- and falls back to the first real user prompt.
+    """
+    cwd = branch = title = prompt = None
+    with path.open(errors="replace") as fh:
+        for i, line in enumerate(fh):
+            if i > 400 or (cwd and prompt):
+                break
+            try:
+                rec = json.loads(line)
+            except ValueError:
+                continue
+            cwd = cwd or rec.get("cwd")
+            branch = branch or rec.get("gitBranch")
+            title = title or rec.get("aiTitle")
+            if prompt or rec.get("type") != "user":
+                continue
+            content = (rec.get("message") or {}).get("content")
+            if isinstance(content, list):
+                content = " ".join(
+                    b.get("text", "") for b in content if isinstance(b, dict)
+                )
+            if isinstance(content, str):
+                text = " ".join(content.split())
+                # Skip harness-injected openers; they are not the user's ask.
+                if text and not text.startswith(("<", "Caveat:", "[Request interrupted")):
+                    prompt = text
+    return cwd, branch, title or prompt
+
+
+def main():
+    argv = sys.argv[1:]
+    limit = 40
+    if argv and argv[0] == "-n":
+        limit, argv = int(argv[1]), argv[2:]
+    needles = [t.lower() for t in argv]
+
+    rows = []
+    for jsonl in PROJECTS.glob("*/*.jsonl"):
+        cwd, branch, prompt = summarize(jsonl)
+        haystack = f"{jsonl.stem} {cwd} {branch} {prompt}".lower()
+        if any(n not in haystack for n in needles):
+            continue
+        rows.append((jsonl.stat().st_mtime, jsonl.stem, cwd or jsonl.parent.name,
+                     branch or "-", prompt or "(no user message)"))
+
+    rows.sort(reverse=True)
+    for mtime, sid, cwd, branch, prompt in rows[:limit]:
+        when = datetime.fromtimestamp(mtime, timezone.utc).astimezone().strftime("%m-%d %H:%M")
+        print(f"\033[1m{when}\033[0m  {sid}  \033[36m{branch}\033[0m")
+        print(f"          {cwd}")
+        print(f"          {prompt[:150]}")
+    if not rows:
+        print("no sessions matched", file=sys.stderr)
+        return 1
+    print(f"\n{len(rows)} match(es). Resume with:  cd <dir> && claude --resume <id>")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

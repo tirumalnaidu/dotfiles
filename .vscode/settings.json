@@ -1,0 +1,10 @@
+{
+    "clangd.path": "/home/tirumal/.vscode-server/data/User/globalStorage/llvm-vs-code-extensions.vscode-clangd/install/22.1.6/clangd_22.1.6/bin/clangd",
+    "python.terminal.activateEnvironment": false,
+    "python-envs.terminal.autoActivationType": "off",
+    "terminal.integrated.localEchoLatencyThreshold": 0,   // predict immediately, default 30
+    "terminal.integrated.localEchoEnabled": "always",
+    "terminal.integrated.gpuAcceleration": "on",
+    "terminal.integrated.shellIntegration.enabled": true
+
+}

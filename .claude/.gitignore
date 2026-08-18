@@ -1,0 +1,11 @@
+# Allowlist, not denylist. ~/.claude holds a live OAuth token, session keys and
+# 2.6G of transcripts and state; a denylist is one missed pattern from leaking
+# them into a public repo, so this ignores everything and opts files back in.
+*
+!.gitignore
+!CLAUDE.md
+!settings.json
+!statusline-command.sh
+!bin/
+!bin/claude-turn-diff.sh
+!bin/cc-sessions

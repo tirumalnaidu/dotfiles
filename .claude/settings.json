@@ -1,0 +1,84 @@
+{
+  "permissions": {
+    "defaultMode": "auto"
+  },
+  "model": "opus[1m]",
+  "enabledPlugins": {
+    "pr-review-toolkit@claude-plugins-official": true,
+    "clangd-lsp@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "mattpocock-skills@claude-plugins-official": true,
+    "mem0@mem0-plugins": false
+  },
+  "extraKnownMarketplaces": {
+    "mem0-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "mem0ai/mem0"
+      }
+    }
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline-command.sh"
+  },
+  "effortLevel": "xhigh",
+  "tui": "fullscreen",
+  "autoMemoryDirectory": "/home/tirumal/.claude/memory",
+  "editorMode": "normal",
+  "verbose": false,
+  "skipAutoPermissionPrompt": true,
+  "askUserQuestionTimeout": "10m",
+  "autoMode": {
+    "soft_deny": [
+      "$defaults",
+      "Triggering CI: gh workflow run, gh run rerun, gh pr ready, or pushing a branch whose purpose is to fire gates. Consumes shared CI capacity and runner time. The user dispatches runs themselves.",
+      "Publishing to GitHub: gh issue create, gh pr create, gh pr comment, gh pr review, gh pr merge. The body must be drafted to a markdown file and explicitly approved first. A blanket 'go ahead' authorizes only the reversible parts, and never a batch of publishes chained together.",
+      "git add of paths the user did not stage, or git commit without an explicit ask in the current message. Commit exactly what is already staged.",
+      "git push, force-push, branch deletion, or rewriting published history.",
+      "Starting a long build, code-generation, or benchmark run. The user drives those; the machine and its licences are shared.",
+      "Starting a second long build, generation, or test run while one is already in flight."
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "statusMessage": "ruff format + fix",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath' | { read -r f; case \"$f\" in *.py) d=$(dirname \"$f\"); while [ \"$d\" != \"/\" ]; do [ -x \"$d/.venv/bin/ruff\" ] && break; d=$(dirname \"$d\"); done; r=\"$d/.venv/bin/ruff\"; [ -x \"$r\" ] || r=ruff; \"$r\" format \"$f\" && \"$r\" check --fix \"$f\";; esac; } 2>/dev/null || true",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/tirumal/.claude/bin/claude-turn-diff.sh baseline",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/tirumal/.claude/bin/claude-turn-diff.sh show",
+            "timeout": 45,
+            "statusMessage": "opening diffs"
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "FORCE_HYPERLINK": "0"
+  }
+}
